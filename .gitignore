@@ -6,7 +6,10 @@ __pycache__/
 build/
 dist/
 .pytest_cache/
+.coverage
+htmlcov/
 .ipynb_checkpoints/
+.ruff_cache/
 
 # Virtual envs
 .venv/
@@ -16,6 +19,7 @@ env/
 # Credentials / secrets (NEVER commit these)
 *.env
 .env
+!.env.example
 *token*
 asf_token.txt
 .netrc
@@ -31,13 +35,22 @@ asf_token.txt
 *.csv
 *.npy
 *.npz
+*.SAFE/
+*.dim
+*.data/
 
 # Working/output dirs created by the pipeline
 _work/
+work/
 out/
 output/
 downloads/
 processed_S1/
+observations/
+manifest/
+status/
+runs/
+logs/
 
 # OS cruft
 .DS_Store
