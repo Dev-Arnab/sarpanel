@@ -1,0 +1,150 @@
+# Michigan combined fields, SLC, 2016 to 2023.
+#
+# The direct replacement for step1_asf_to_farm.sb. Run tools/inspect_aoi.py
+# against the geojson first: it will tell you which identifier column exists and
+# whether the area filter finds what it expects.
+#
+#   python tools/inspect_aoi.py \
+#     /mnt/research/bassolab/ysz_pipeline_rj/geopandas_data/combined_all_fields.geojson \
+#     --search --start-date 2016-01-01 --end-date 2023-12-01
+#
+# Then:
+#   sbatch slurm/plan.sb configs/michigan_all_fields.yaml
+#   sbatch --array=0-399 slurm/run_shard.sb configs/michigan_all_fields.yaml
+
+name: michigan_all_fields_2016_2023
+
+aoi:
+  source: "/mnt/research/bassolab/ysz_pipeline_rj/geopandas_data/combined_all_fields.geojson"
+
+  # Confirmed unique across all 328 features. 'Field' holds identical values;
+  # farm_name is used because it is the more conventional name and matches the
+  # identifier already in use elsewhere in the project.
+  id_column: farm_name
+
+  # 3 acres, the old pipeline's threshold. Computed in a projected CRS rather
+  # than read from the 'acres' column, so it does not depend on how that column
+  # was derived. It excludes exactly one of the 328 fields.
+  min_area_m2: 12140
+
+  # The AOI is compact: 328 fields clustered near Lansing, held by two farm
+  # operations. The dissolved buffered union stays small enough for the catalog
+  # to accept, so the WKT rejection risk that applies to statewide AOIs does not
+  # arise here.
+  search_buffer_m: 10000
+
+search:
+  start_date: "2016-01-01"
+  end_date: "2023-12-01"
+  beam_mode: IW
+  polarization: "VV+VH"
+
+  # Confirmed by catalog query over 2016-2023: exactly two tracks cover these
+  # fields, both ascending. Track 48 contributes 313 scenes, track 121 gives
+  # 379, for 692 total and about 2,983 GB of cumulative transfer.
+  #
+  # Both are kept deliberately. They view the fields at different incidence
+  # angles, and that between-track contrast is the main source of geometry
+  # variation available here, so dropping one would discard the signal this
+  # pipeline exists to record.
+  relative_orbits: [48, 121]
+
+  # Descending returns zero scenes over this AOI, verified with and without the
+  # polarization filter, so this footprint is not in the descending acquisition
+  # plan. Stated explicitly rather than left null so the run records that it was
+  # checked rather than assumed.
+  orbit_direction: ASCENDING
+
+processing:
+  product_type: SLC
+
+  # The fields sit near 84.7 degrees west, just inside UTM zone 16N, so 32616
+  # is the natural choice and matches the CRS the inspector used for areas.
+  # EPSG:3078 (NAD83 Michigan Oblique Mercator) would also work and is the
+  # better option if the AOI ever expands east past 84 degrees west, where a
+  # single UTM zone starts to distort.
+  target_crs: "EPSG:32616"
+  target_spacing_m: 10.0
+
+  polarizations: ["VV", "VH"]
+  terrain_flattening: true          # gamma0 rather than sigma0
+  dem: "Copernicus 30m Global DEM"
+  remove_thermal_noise: true
+  remove_border_noise: true
+
+  # Off on purpose. A speckle filter destroys the ENL statistic that gives each
+  # observation its precision weight.
+  speckle_filter: null
+
+  # Subsetting is DISABLED, on evidence rather than by default.
+  #
+  # Restricting the processed area speeds up Terrain-Flattening but biases it.
+  # Measured on one field over five dates, against an unsubsetted baseline:
+  #
+  #      buffer   subset area        VV offset
+  #       5 km    1% of scene        -0.685 dB
+  #      20 km    4% of scene        -0.533 dB
+  #     150 km    100% of scene      -0.004 dB
+  #
+  # Both polarisations shift by the same amount and the VH/VV ratio survives,
+  # so this is the gamma0 normalisation, not masking. Terrain-Flattening
+  # divides by an illuminated area computed from surrounding terrain, and a
+  # truncated neighbourhood biases it. At 150 km the subset covers the whole
+  # scene and the bias vanishes, which rules out the Subset operator itself.
+  #
+  # The bias only clears as the subset approaches the full scene, so there is
+  # no buffer that is both fast and unbiased. And with 328 fields spread over
+  # the AOI the subset already covers half the scene at 5 km, so the saving
+  # would be 39 percent at best rather than the 21x seen on a single field.
+  #
+  # Not worth 0.5 dB of systematic bias.
+  subset_to_aoi: false
+  subset_buffer_m: 5000
+
+  keep_archives: false
+
+output:
+  root: "/mnt/gs21/scratch/bassolab/rjayne/sarpanel_mi_2016_2023"
+
+  # One row per pixel per field per acquisition, at the 10 m target spacing.
+  # This is what the within-field yield stability zone work needs: zones are
+  # defined by spatial structure inside a field, which a polygon mean cannot
+  # express.
+  #
+  # Measured from the catalog: 692 scenes touching an average of 153 fields
+  # each gives about 105,800 field-observations, and at a median 2,064 pixels
+  # per field that is roughly 220 million rows. Compressed with zstd and
+  # partitioned by month this runs to tens of gigabytes.
+  #
+  # Each row carries x, y, VV and VH in both linear power and decibels, the
+  # projected local incidence angle, and the layover/shadow flag, alongside the
+  # scene-level geometry columns.
+  #
+  # The ENL, coefficient of variation, and standard error columns are aggregate
+  # statistics and are not written at this granularity. Compute them when
+  # collapsing pixels to a field mean, and aggregate in LINEAR POWER, never in
+  # decibels: averaging in the log domain is biased low, and the bias grows
+  # with within-field heterogeneity, which is the quantity being measured.
+  granularity: pixel
+
+  # The smallest retained field holds about 600 pixels at 10 m, so this
+  # threshold excludes nothing here. It stays in as a guard against scenes that
+  # clip a field at the swath edge.
+  min_valid_pixels: 16
+
+  enl_trim_percentile: 2.0          # guards against farm buildings, open water
+  drop_layover_shadow: true
+  compression: zstd
+  partition_by_date: true
+
+# 692 scenes over 92 shards is 7.5 scenes each. Raised from 46 because
+# subsetting is off, so each scene costs full-swath Terrain-Flattening: about
+# 39 minutes measured on GRD, and SLC adds TOPSAR-Deburst across three
+# subswaths. At 90 minutes per scene that is 11 hours per shard; at 150 it is
+# 19, both comfortably inside the two-day wall. At 46 shards the pessimistic
+# case would have overrun it.
+#
+# Peak disk is set by concurrency, not by the 2,983 GB total: the runner deletes
+# each archive after geocoding, so 46 tasks running at once hold roughly 340 GB
+# between them. Check that figure against your scratch quota, not the total.
+n_shards: 92
