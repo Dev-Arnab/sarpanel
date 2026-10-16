@@ -1,46 +1,55 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sar2parquet"
-version = "0.1.1"
-description = "Turn farm-field polygons into analysis-ready Sentinel-1 SAR data in Parquet, using ASF Search and pyroSAR."
+name = "sarpanel"
+version = "0.1.0"
+description = "Analysis-ready Sentinel-1 observations over polygons, with acquisition geometry and speckle statistics retained"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
+license = { text = "MIT" }
 authors = [
     { name = "Dev Jyoti Ghosh Arnab" },
     { name = "Ryan Jayne" },
 ]
-license = { text = "MIT" }
-keywords = ["SAR", "Sentinel-1", "remote-sensing", "agriculture", "pyroSAR", "ASF"]
+keywords = ["SAR", "Sentinel-1", "remote sensing", "agriculture", "pyroSAR", "ASF", "SNAP"]
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "Topic :: Scientific/Engineering :: GIS",
     "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: GIS",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "numpy",
-    "pandas",
-    "pyarrow",
-    "geopandas",
-    "shapely",
-    "rasterio",
-    "requests",
-    "asf_search",
-    "pyroSAR",
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "geopandas>=0.14",
+    "shapely>=2.0",
+    "rasterio>=1.3",
+    "pyarrow>=14.0",
+    "pyyaml>=6.0",
+    "asf-search>=7.0",
+    "pyroSAR>=0.24",
 ]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "pytest-cov>=4.1", "ruff>=0.4"]
+
+[project.scripts]
+sarpanel = "sarpanel.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/Dev-Arnab/sar2parquet"
 Repository = "https://github.com/Dev-Arnab/sar2parquet"
 Issues = "https://github.com/Dev-Arnab/sar2parquet/issues"
 
-[project.optional-dependencies]
-dev = ["pytest"]
-
-[project.scripts]
-sar2parquet = "sar2parquet.cli:main"
-
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::PendingDeprecationWarning"]
+
+[tool.ruff]
+line-length = 95
+target-version = "py310"
