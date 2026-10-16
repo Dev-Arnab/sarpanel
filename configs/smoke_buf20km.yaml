@@ -1,0 +1,99 @@
+# Buffer calibration: identical to smoke_test but with a 20 km subset buffer.
+#
+# At 5 km the subset shifted VV and VH by about 0.7 dB each while leaving the
+# VH/VV ratio intact, which is the signature of Terrain-Flattening's
+# illuminated-area normalisation losing the surrounding terrain it needs.
+# If that offset shrinks here, the buffer was simply too narrow.
+#
+#   python -m sarpanel.cli plan configs/smoke_buf20km.yaml
+#   sbatch --array=0-0 slurm/run_shard.sb configs/smoke_buf20km.yaml
+#
+# One farm, two months, GRD rather than SLC. Downloads a handful of ~1 GB
+# granules instead of ~5 GB ones and skips TOPSAR deburst, so it finishes in
+# well under an hour on a dev node. It exercises the identical code path as the
+# full run: catalog query, manifest, download, SNAP graph, incidence angle band,
+# extraction, ENL, provenance, parquet write.
+#
+# Submit it, do not run it interactively. Development and login nodes cap
+# per-user memory and CPU time below what Terrain-Flattening needs on a full
+# scene, and the process gets killed with return code -9 partway through.
+#
+#   python -m sarpanel.cli plan configs/smoke_test.yaml
+#   sbatch --array=0-0 slurm/run_shard.sb configs/smoke_test.yaml
+#   python -m sarpanel.cli status configs/smoke_test.yaml
+#   python tools/check_output.py configs/smoke_test.yaml
+#
+# What to check afterwards, in this order:
+#   1. inc_angle_mean is populated and sits in a plausible 29 to 46 degree band
+#   2. inc_angle_std is small within a field but differs across tracks
+#   3. enl_empirical is a few looks, not NaN and not absurdly large
+#   4. VV_mean_db is roughly -8 to -18 for cropland
+#
+# If any of those look wrong, stop and diagnose here rather than at 60 shards.
+
+name: smoke_test_buf20km
+
+aoi:
+  source: "/mnt/research/bassolab/ysz_pipeline_rj/geopandas_data/combined_all_fields.geojson"
+  id_column: farm_name
+  min_area_m2: 12140
+
+  # One field only. Replace the name with any identifier the inspector listed;
+  # a large field gives a cleaner ENL estimate for a first look.
+  where: "farm_name == '520_Pitsilo'"
+
+  search_buffer_m: 5000
+
+search:
+  # Peak growing season, so backscatter is unambiguously vegetated and an
+  # obviously wrong result is easy to recognise.
+  #
+  # 2020 rather than 2022 on purpose. This field has zero acquisitions in
+  # June-July 2022: S1B failed in December 2021, coverage roughly halved, and
+  # the ten scenes the wider AOI received in that window fall on other frames.
+  # Verified directly against the catalog, this field and window returns five
+  # GRD_HD granules in 2020 and none in 2022.
+  start_date: "2020-06-01"
+  end_date: "2020-07-31"
+  beam_mode: IW
+  polarization: "VV+VH"
+
+processing:
+  # GRD for the smoke test. Switch to SLC only once this passes.
+  product_type: GRD
+  target_crs: "EPSG:32616"
+  target_spacing_m: 10.0
+  polarizations: ["VV", "VH"]
+  terrain_flattening: true
+  dem: "Copernicus 30m Global DEM"
+  speckle_filter: null
+
+  # Kept here so a failed geocode can be rerun without re-downloading. Turn off
+  # for the production run.
+  # Restrict processing to the part of the swath containing AOIs.
+  # Terrain-Flattening was 77 percent of runtime in the smoke test and its cost
+  # scales with processed area, not with how many polygons are wanted. The
+  # buffer is generous because Terrain-Flattening needs surrounding terrain to
+  # compute illuminated area near the edge; the extraction step masks to the
+  # true polygons afterwards, so over-covering is safe and under-covering is
+  # not.
+  subset_to_aoi: true
+  subset_buffer_m: 20000
+
+  keep_archives: true
+
+  # Cap SNAP's tile cache and thread count. Uncapped, the cache expands toward
+  # the JVM heap limit and Terrain-Flattening runs out of room for its own
+  # working set, which the operating system resolves with a SIGKILL that
+  # surfaces as "process return code -9". Roughly a third of the job's memory
+  # is a safe ceiling. Omit both to derive them from the SLURM allocation.
+  snap_tile_cache_gb: 24
+  snap_threads: 8
+
+output:
+  root: "/mnt/gs21/scratch/bassolab/sarpanel_smoke_buf20km"
+  granularity: polygon
+  min_valid_pixels: 16
+  drop_layover_shadow: true
+
+n_shards: 1
