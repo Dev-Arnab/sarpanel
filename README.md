@@ -11,9 +11,9 @@ scenes with [ESA SNAP](https://step.esa.int/main/toolboxes/snap/) through
 polygon per acquisition**. Each row has the backscatter estimate and the
 information a statistical model needs in order to weight that estimate.
 
-This repository used to ship an earlier tool called `sar2parquet`. That version
-wrote one row per pixel. `sarpanel` replaces it. The install command, the
-Python import, and the command-line program all use the name `sarpanel` now.
+An earlier version of this tool was called `sar2parquet` and wrote one row per
+pixel. This version writes one row per polygon per acquisition. The repository,
+the Python import, and the command-line program all use the name `sarpanel`.
 
 ## What a row contains
 
@@ -138,8 +138,8 @@ If you do not have conda yet, install
 From a clone of this repository:
 
 ```bash
-git clone https://github.com/Dev-Arnab/sar2parquet.git
-cd sar2parquet
+git clone https://github.com/Dev-Arnab/sarpanel.git
+cd sarpanel
 conda env create -f environment.yml
 conda activate sarpanel
 ```
@@ -170,7 +170,7 @@ pip install --no-deps -e .
 From GitHub, into an environment that already has the conda stack:
 
 ```bash
-pip install --no-deps "git+https://github.com/Dev-Arnab/sar2parquet.git"
+pip install --no-deps "git+https://github.com/Dev-Arnab/sarpanel.git"
 ```
 
 Check that the new package is the one Python sees:
