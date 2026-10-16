@@ -1,0 +1,42 @@
+#!/bin/bash --login
+#SBATCH --job-name=sarpanel_plan
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=32G
+#SBATCH --time=02:00:00
+#SBATCH --output=logs/%x_%j.out
+#SBATCH --error=logs/%x_%j.err
+set -euo pipefail
+
+# Queries the catalog once and writes the scene manifest. Worker tasks read
+# that file; they do not query the catalog themselves.
+#
+#   mkdir -p logs
+#   sbatch slurm/plan.sb configs/local_demo.yaml
+#
+# On a laptop or a login node you can skip SLURM:
+#   sarpanel plan configs/local_demo.yaml
+#
+# Optional environment variables:
+#   SARPANEL_PROJECT        repository root (default: this repo)
+#   SARPANEL_ENV            conda environment name or prefix (default: sarpanel)
+#   SARPANEL_CONDA_MODULE   module to load before conda activate
+
+PROJECT="${SARPANEL_PROJECT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+CONFIG="${1:?usage: sbatch slurm/plan.sb <config.yaml>}"
+[[ "$CONFIG" = /* ]] || CONFIG="$PROJECT/$CONFIG"
+
+if [[ -n "${SARPANEL_CONDA_MODULE:-}" ]]; then
+  module purge
+  module load "$SARPANEL_CONDA_MODULE"
+fi
+conda activate "${SARPANEL_ENV:-sarpanel}"
+
+export PYTHONPATH="$PROJECT/src:${PYTHONPATH:-}"
+
+# Credentials resolve from EARTHDATA_TOKEN, ~/.earthdata_token, or ~/.netrc.
+# They are never passed as arguments: arguments are readable from the process
+# table on a shared node and persist in scheduler accounting records.
+
+cd "$PROJECT"
+mkdir -p logs
+python -m sarpanel.cli plan "$CONFIG"
