@@ -1,0 +1,41 @@
+# Portable first run. No cluster paths and no field file required.
+#
+# One small box in central Michigan, one month of Sentinel-1 GRD.
+# `sarpanel plan` only searches the catalog. `sarpanel run` downloads the
+# scenes and needs both an Earthdata login and ESA SNAP. See README.md.
+#
+#   sarpanel plan configs/local_demo.yaml
+#   sarpanel run  configs/local_demo.yaml --shard 0
+#   sarpanel status configs/local_demo.yaml
+
+name: local_demo
+
+aoi:
+  # minx,miny,maxx,maxy in longitude/latitude (EPSG:4326)
+  source: "-84.60,42.68,-84.55,42.72"
+
+search:
+  # June 2020 is a growing-season window with Sentinel-1A coverage.
+  # Mid-2022 is often empty over a small box: Sentinel-1B failed in
+  # December 2021, so the revisit gap roughly doubled after that.
+  start_date: "2020-06-01"
+  end_date: "2020-06-30"
+  beam_mode: IW
+  polarization: "VV+VH"
+
+processing:
+  product_type: GRD
+  # UTM zone 16N. Change this if you move the box to a different zone.
+  target_crs: "EPSG:32616"
+  target_spacing_m: 10.0
+  polarizations: ["VV", "VH"]
+  terrain_flattening: true
+  speckle_filter: null
+  subset_to_aoi: true
+  subset_buffer_m: 5000
+
+output:
+  root: "./runs/local_demo"
+  granularity: polygon
+
+n_shards: 1
