@@ -39,9 +39,9 @@ dev = ["pytest>=7.4", "pytest-cov>=4.1", "ruff>=0.4"]
 sarpanel = "sarpanel.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/Dev-Arnab/sar2parquet"
-Repository = "https://github.com/Dev-Arnab/sar2parquet"
-Issues = "https://github.com/Dev-Arnab/sar2parquet/issues"
+Homepage = "https://github.com/Dev-Arnab/sarpanel"
+Repository = "https://github.com/Dev-Arnab/sarpanel"
+Issues = "https://github.com/Dev-Arnab/sarpanel/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
