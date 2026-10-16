@@ -1,13 +1,17 @@
-# Reproducible environment for sar2parquet.
+# Reproducible environment for sarpanel.
 #
-# Create it with:
+# The geospatial libraries (geopandas, rasterio) are installed from conda-forge
+# because their GDAL bindings usually fail if you install them with pip alone.
+# asf_search and pyroSAR are plain Python and are installed with pip afterwards.
+#
+# ESA SNAP is not a Python package. Install it separately and set SNAP_HOME.
+# See README.md.
+#
+# Create the environment with:
 #     conda env create -f environment.yml
-#     conda activate sar2parquet
-#     pip install -e .
-#
-# Note: the geocoding step also requires ESA SNAP to be installed separately
-# (https://step.esa.int/main/download/snap-download/) with its `gpt` tool on PATH.
-name: sar2parquet
+#     conda activate sarpanel
+#     pip install --no-deps -e .
+name: sarpanel
 channels:
   - conda-forge
 dependencies:
@@ -15,12 +19,15 @@ dependencies:
   - numpy
   - pandas
   - pyarrow
+  - pyyaml
   - geopandas
   - shapely
+  - pyproj
   - rasterio
-  - requests
   - jupyterlab
+  - ipykernel
+  - pytest
   - pip
   - pip:
-      - asf_search
-      - pyroSAR
+      - asf_search>=7
+      - pyroSAR>=0.24
