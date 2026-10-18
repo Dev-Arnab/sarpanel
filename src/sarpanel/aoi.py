@@ -22,10 +22,9 @@ import hashlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Iterable
 
 import geopandas as gpd
-import pandas as pd
 from shapely import wkt as shapely_wkt
 from shapely.geometry import box, shape
 from shapely.geometry.base import BaseGeometry

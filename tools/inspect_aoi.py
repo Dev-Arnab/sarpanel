@@ -142,7 +142,7 @@ def main() -> int:
 
     # Pixels per field at 10 m drives how reliable the ENL estimate will be.
     px = area_m2 / 100.0
-    print(f"\nPixels per field at 10 m spacing:")
+    print("\nPixels per field at 10 m spacing:")
     print(f"  median {px.median():,.0f}   p05 {px.quantile(0.05):,.0f}   "
           f"p95 {px.quantile(0.95):,.0f}")
     thin = int((px < 16).sum())
@@ -161,7 +161,7 @@ def main() -> int:
 
     footprint = aoi.search_footprint(buffer_m=10_000)
     minx, miny, maxx, maxy = footprint.bounds
-    print(f"\nSearch footprint (10 km buffer, dissolved):")
+    print("\nSearch footprint (10 km buffer, dissolved):")
     print(f"  bbox        {minx:.3f},{miny:.3f},{maxx:.3f},{maxy:.3f}")
     print(f"  WKT length  {len(footprint.wkt):,} chars")
     print(f"  AOI hash    {aoi.checksum()}")
@@ -195,7 +195,8 @@ def main() -> int:
         print(f"  download      {gb:,.1f} GB")
         print(f"  tracks        {dict(manifest.groupby('relative_orbit').size())}")
         print(f"  directions    {dict(manifest.groupby('orbit_direction').size())}")
-        print(f"  per year      {dict(manifest['acquisition_date'].str[:4].value_counts().sort_index())}")
+        per_year = manifest["acquisition_date"].str[:4].value_counts().sort_index()
+        print(f"  per year      {dict(per_year)}")
 
         obs = len(manifest) * manifest["n_aoi_hit"].mean()
         print(f"\n  approx polygon-level observations: {human(obs)}")

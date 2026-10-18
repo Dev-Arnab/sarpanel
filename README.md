@@ -54,13 +54,14 @@ a free [NASA Earthdata](https://urs.earthdata.nasa.gov/) account, and you have
 to authorize ASF's application once. The credentials section below is the part
 people usually miss.
 
-Install it inside the conda environment from the next section:
+Install it from conda-forge, in the environment created in the next section.
+`environment.yml` already includes it. The conda package name is `asf_search`:
 
 ```bash
-pip install "asf-search>=7"
+conda install -c conda-forge "asf_search>=7"
 ```
 
-`environment.yml` already does this. Confirm the import:
+Confirm the import:
 
 ```bash
 python -c "import asf_search; print(asf_search.__version__)"
@@ -79,11 +80,17 @@ Think of it this way:
 - **pyroSAR** is the Python remote control for that engine.
 - **sarpanel** decides which scenes to process and what to write into the table.
 
-Install pyroSAR inside the same conda environment:
+Install pyroSAR from conda-forge in that same environment. The conda package
+name is `pyrosar` (all lowercase):
 
 ```bash
-pip install "pyroSAR>=0.24"
+conda install -c conda-forge "pyrosar>=0.24"
 ```
+
+Do not install pyroSAR with pip. Its dependency `psycopg2` is compiled from
+source, and that build stops with `pg_config executable not found` unless
+PostgreSQL's development tools are already on the machine. The conda-forge
+package is a binary and does not need `pg_config`.
 
 Then install SNAP separately:
 
@@ -118,17 +125,22 @@ band (`export_extra`). `sarpanel doctor` checks this. If it reports
 `export_extra: False`, upgrade pyroSAR before processing anything:
 
 ```bash
-pip install -U "pyroSAR>=0.24"
+conda install -c conda-forge "pyrosar>=0.24"
 ```
 
 Searching the catalog works without SNAP. Producing Parquet does not.
 
 ## Install on a new computer
 
-The geospatial libraries (`geopandas`, `rasterio`) sit on top of GDAL.
-Installing those with pip on Windows is a common way to get a broken
-environment. Use conda, and keep this project out of the base Anaconda
-environment.
+Use conda. **`pip install sarpanel` is not a supported setup.** Two of the
+dependencies fail on a normal pip install:
+
+- `rasterio` and `geopandas` need GDAL. pip does not install GDAL's `osgeo` bindings.
+- `pyroSAR` depends on `psycopg2`, which pip compiles from source. That compile
+  needs PostgreSQL's `pg_config` program, and it errors when `pg_config` is absent.
+
+`environment.yml` installs those from conda-forge, which provides compiled
+binaries. Keep this project out of the base Anaconda environment.
 
 If you do not have conda yet, install
 [Miniforge](https://github.com/conda-forge/miniforge) (or Anaconda).
@@ -148,9 +160,9 @@ Or, without the file, the same stack:
 
 ```bash
 conda create -n sarpanel -c conda-forge python=3.11 ^
-    geopandas rasterio shapely pyproj pandas pyarrow pyyaml ipykernel
+    geopandas rasterio shapely pyproj pandas pyarrow pyyaml ^
+    asf_search pyrosar ipykernel
 conda activate sarpanel
-pip install "asf-search>=7" "pyroSAR>=0.24"
 ```
 
 On bash, replace the `^` line continuation with `\`.
@@ -408,6 +420,7 @@ pytest -q
 | `ModuleNotFoundError: geopandas` or `rasterio` | The conda environment is not active, or those packages were never installed into it. Recreate it from `environment.yml`. |
 | NumPy 1.x vs 2.x import errors, or the wrong `sys.executable` | Jupyter is using base Anaconda. Select the **Python (sarpanel)** kernel. |
 | `sarpanel` is not recognized | The environment is not active, or `pip install --no-deps -e .` has not been run in it. |
+| `pg_config executable not found`, or `No module named 'osgeo'` | Packages were installed with pip. Remove that environment and create it again from `environment.yml`. |
 | `Invalid/Expired token` | The token was copied with a space, or it has expired. Generate a new one. |
 | `Pre authorization required` | The Earthdata account has not approved the ASF application. See the login section. |
 | `PermissionError` on `.netrc` or `.earthdata_token` | On Linux, `chmod 600` that file. On Windows, use `EARTHDATA_TOKEN` in the environment instead. |

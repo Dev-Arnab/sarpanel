@@ -53,3 +53,8 @@ filterwarnings = ["ignore::PendingDeprecationWarning"]
 [tool.ruff]
 line-length = 95
 target-version = "py310"
+
+[tool.ruff.lint]
+# Pyflakes, pycodestyle, and import order. Newer ruff releases enable many
+# extra rules by default; this selection keeps the check stable.
+select = ["E", "F", "I"]

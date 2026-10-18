@@ -291,7 +291,8 @@ def _processing_levels(asf, product_type: str) -> list[str]:
     if not levels:
         raise RuntimeError(
             f"This asf_search build defines no product type constants for "
-            f"{product_type!r}. Run tools/debug_search.py to see what it does define."
+            f"{product_type!r}. Upgrade asf_search. Sentinel-1 GRD products "
+            "are GRD_HD, GRD_HS, GRD_MD, GRD_MS, and GRD_FD."
         )
     log.debug("processingLevel resolved to %s", levels)
     return levels

@@ -45,7 +45,10 @@ def test_inverted_bbox_raises():
 def test_geodataframe_input_is_reprojected():
     gdf = gpd.GeoDataFrame(
         {"field_id": ["a", "b"]},
-        geometry=[box(500000, 4500000, 500500, 4500500), box(501000, 4500000, 501500, 4500500)],
+        geometry=[
+            box(500000, 4500000, 500500, 4500500),
+            box(501000, 4500000, 501500, 4500500),
+        ],
         crs="EPSG:32616",
     )
     aoi = load_aoi(gdf)
@@ -80,7 +83,10 @@ def test_area_filter_uses_projected_area():
 def test_duplicate_ids_are_disambiguated():
     gdf = gpd.GeoDataFrame(
         {"name": ["north", "north"]},
-        geometry=[box(500000, 4500000, 500500, 4500500), box(501000, 4500000, 501500, 4500500)],
+        geometry=[
+            box(500000, 4500000, 500500, 4500500),
+            box(501000, 4500000, 501500, 4500500),
+        ],
         crs="EPSG:32616",
     )
     aoi = load_aoi(gdf, id_column="name")
@@ -102,7 +108,9 @@ def test_search_footprint_covers_all_polygons():
 
 def test_search_footprint_is_simplified_when_complex():
     """Scattered AOI sets must not produce WKT the catalog will reject."""
-    boxes = [f"{-85 + i * 0.05:.3f},42.6,{-85 + i * 0.05 + 0.01:.3f},42.61" for i in range(300)]
+    boxes = [
+        f"{-85 + i * 0.05:.3f},42.6,{-85 + i * 0.05 + 0.01:.3f},42.61" for i in range(300)
+    ]
     aoi = load_aoi(boxes)
     footprint = aoi.search_footprint()
     assert len(footprint.wkt) < 60_000

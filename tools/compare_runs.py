@@ -23,7 +23,6 @@ from __future__ import annotations
 import argparse
 import glob
 import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -123,7 +122,7 @@ def main() -> int:
 
     # Per-scene detail: a single bad scene and a uniform bias need different fixes.
     if "VV_mean_db_a" in merged:
-        print(f"\nPer-date VV offset")
+        print("\nPer-date VV offset")
         per_date = (
             (merged["VV_mean_db_b"] - merged["VV_mean_db_a"])
             .groupby(merged["date"])

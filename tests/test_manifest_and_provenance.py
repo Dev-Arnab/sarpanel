@@ -10,6 +10,7 @@ overlap and no gaps.
 import pandas as pd
 import pytest
 
+from sarpanel.aoi import load_aoi
 from sarpanel.config import RunConfig
 from sarpanel.manifest import assign_shards, attach_aoi_membership
 from sarpanel.provenance import (
@@ -17,7 +18,6 @@ from sarpanel.provenance import (
     read_provenance,
     write_parquet_with_provenance,
 )
-from sarpanel.aoi import load_aoi
 from sarpanel.runner import output_path_for
 
 
@@ -99,8 +99,12 @@ def test_output_paths_do_not_collide_for_same_date_and_direction(tmp_path):
             "output": {"root": str(tmp_path)},
         }
     )
-    a = pd.Series({"scene_id": "S1A_IW_SLC_20220615T234041_A", "acquisition_date": "2022-06-15"})
-    b = pd.Series({"scene_id": "S1A_IW_SLC_20220615T234106_A", "acquisition_date": "2022-06-15"})
+    a = pd.Series(
+        {"scene_id": "S1A_IW_SLC_20220615T234041_A", "acquisition_date": "2022-06-15"}
+    )
+    b = pd.Series(
+        {"scene_id": "S1A_IW_SLC_20220615T234106_A", "acquisition_date": "2022-06-15"}
+    )
     assert output_path_for(cfg, a) != output_path_for(cfg, b)
 
 
@@ -198,7 +202,7 @@ def test_no_defined_levels_raises_a_useful_error():
 
     from sarpanel.manifest import _processing_levels
 
-    with pytest.raises(RuntimeError, match="debug_search"):
+    with pytest.raises(RuntimeError, match="no product type constants"):
         _processing_levels(Empty, "GRD")
 
 
@@ -343,7 +347,7 @@ def test_complex_aoi_is_simplified(tmp_path):
     import geopandas as gpd
 
     from sarpanel.aoi import load_aoi
-    from sarpanel.processing import write_scene_subset, _vertex_count
+    from sarpanel.processing import _vertex_count, write_scene_subset
 
     boxes = [f"{-85 + i * 0.02:.3f},42.6,{-85 + i * 0.02 + 0.01:.3f},42.61"
              for i in range(120)]

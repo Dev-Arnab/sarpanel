@@ -21,7 +21,6 @@ import argparse
 import sys
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 
@@ -172,7 +171,10 @@ def main() -> int:
         ok &= check(
             f"{pol} in a plausible range",
             bool(v.quantile(0.01) > lo and v.quantile(0.99) < hi),
-            f"p01 {v.quantile(0.01):.1f}  median {v.median():.1f}  p99 {v.quantile(0.99):.1f} dB",
+            (
+                f"p01 {v.quantile(0.01):.1f}  median {v.median():.1f}  "
+                f"p99 {v.quantile(0.99):.1f} dB"
+            ),
         )
         se = df.get(f"{pol}_se_db")
         if se is not None:

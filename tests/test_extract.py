@@ -6,13 +6,12 @@ to catch the off-by-one and misalignment errors that are invisible in aggregate
 statistics but corrupt per-pixel analysis.
 """
 
+import geopandas as gpd
 import numpy as np
 import pytest
 import rasterio
 from rasterio.transform import from_origin
 from shapely.geometry import box
-
-import geopandas as gpd
 
 from sarpanel.aoi import load_aoi
 from sarpanel.extract import SceneContext, SceneReader, extract_scene, polygon_window

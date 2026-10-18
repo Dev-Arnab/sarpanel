@@ -17,7 +17,6 @@ will process inspectable before any allocation is spent.
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import sys
 from pathlib import Path
@@ -92,13 +91,20 @@ def cmd_plan(args) -> int:
     print(f"Run:            {config.name}")
     print(f"AOI polygons:   {len(aoi):,}")
     print(f"Scenes:         {len(manifest):,}")
-    print(f"Date range:     {manifest['acquisition_date'].min()} to {manifest['acquisition_date'].max()}")
+    start = manifest["acquisition_date"].min()
+    end = manifest["acquisition_date"].max()
+    per_shard = len(manifest) / config.n_shards
+    print(f"Date range:     {start} to {end}")
     print(f"Tracks:         {dict(by_track.head(8))}")
     print(f"Download:       {total_gb:,.1f} GB")
-    print(f"Shards:         {config.n_shards} ({len(manifest) / config.n_shards:.1f} scenes each)")
+    print(f"Shards:         {config.n_shards} ({per_shard:.1f} scenes each)")
     print(f"Manifest:       {config.manifest_path}")
     print()
-    print(f"Submit with:    sbatch --array=0-{config.n_shards - 1} slurm/run_shard.sb {args.config}")
+    print(
+        "Submit with:    "
+        f"sbatch --array=0-{config.n_shards - 1} "
+        f"slurm/run_shard.sb {args.config}"
+    )
     return 0
 
 
@@ -159,7 +165,7 @@ def cmd_doctor(args) -> int:
             build_session(creds)
             print("  VERIFIED against urs.earthdata.nasa.gov")
         except Exception as exc:
-            print(f"  REJECTED by urs.earthdata.nasa.gov\n")
+            print("  REJECTED by urs.earthdata.nasa.gov\n")
             for line in str(exc).splitlines():
                 print(f"    {line}")
 

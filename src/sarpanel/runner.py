@@ -26,7 +26,6 @@ from .aoi import AOISet
 from .extract import SceneContext, SceneReader, extract_scene
 from .processing import (
     GeocodeCapabilities,
-    ProcessingConfig,
     geocode_scene,
     validate_geometry_bands,
     write_scene_subset,

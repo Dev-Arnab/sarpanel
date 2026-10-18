@@ -1,10 +1,13 @@
 # Reproducible environment for sarpanel.
 #
-# The geospatial libraries (geopandas, rasterio) are installed from conda-forge
-# because their GDAL bindings usually fail if you install them with pip alone.
-# asf_search and pyroSAR are plain Python and are installed with pip afterwards.
+# Install this with conda. Do not start from `pip install sarpanel`.
+# rasterio and geopandas need GDAL's osgeo bindings, which pip does not
+# provide. pyroSAR depends on psycopg2, and a pip install compiles that from
+# source, which fails with "pg_config executable not found" unless PostgreSQL
+# development headers are already installed. conda-forge ships both as binaries.
+# The conda package for pyroSAR is named pyrosar.
 #
-# ESA SNAP is not a Python package. Install it separately and set SNAP_HOME.
+# ESA SNAP is not a conda package either. Install it separately and set SNAP_HOME.
 # See README.md.
 #
 # Create the environment with:
@@ -27,7 +30,5 @@ dependencies:
   - jupyterlab
   - ipykernel
   - pytest
-  - pip
-  - pip:
-      - asf_search>=7
-      - pyroSAR>=0.24
+  - asf_search>=7
+  - pyrosar>=0.24
